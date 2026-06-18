@@ -1,0 +1,178 @@
+{
+  "product": {
+    "title": "Buu / Kanban Status PWA",
+    "subtitle": "Canonical Plan V2 sprint board for serious autonomous work",
+    "owner": "Charles + Buu",
+    "surface": "status.grosslightconsulting.com"
+  },
+  "currentSprint": {
+    "id": "S1S2-001-LIVE",
+    "title": "Live status PWA replacement sprint",
+    "state": "in_implementation",
+    "badge": "Implementing now",
+    "summary": "This sprint replaces the stale status cockpit with a serious Buu/Kanban dashboard, removes the unsafe hardcoded Cloudflare token fallback, and leaves the repo ready for security audit, QA, and deployment handoff.",
+    "statusLine": "Frontend implementation underway. Deployment remains gated to the deployment-worker lane.",
+    "checkpoints": [
+      "Replace stale Akumetsu status content with Buu/Kanban status UI.",
+      "Keep the app useful on phone and desktop.",
+      "Return safe status JSON from /api/status with no hardcoded secret fallback.",
+      "Hand off to security audit, QA, deployment, live QA, reviewer, and Buu closeout."
+    ]
+  },
+  "roadmap": [
+    {
+      "id": "S1",
+      "title": "Kanban Dashboard Serious Sprint",
+      "state": "active",
+      "label": "Active now",
+      "summary": "Prove the dashboard, dispatch flow, blockers, and closeout stay visible and clean during a real sprint.",
+      "focus": [
+        "Board/dashboard agreement",
+        "Dependency sequencing",
+        "No stale active leftovers"
+      ]
+    },
+    {
+      "id": "S2",
+      "title": "Web / PWA App Sprint",
+      "state": "active",
+      "label": "Active now",
+      "summary": "Ship a real visible web/PWA slice with responsive UI, local validation, and reviewable evidence.",
+      "focus": [
+        "Visible feature delivery",
+        "Responsive phone + desktop layout",
+        "Build/test/static verification"
+      ]
+    },
+    {
+      "id": "S3",
+      "title": "Backend / API / Data Sprint",
+      "state": "next",
+      "label": "Next recommended",
+      "summary": "Build a small local API/data contract with validation and clean frontend handoff after this live sprint closes.",
+      "focus": [
+        "Local API contract",
+        "Validation and edge cases",
+        "Frontend/backend alignment"
+      ]
+    },
+    {
+      "id": "S4",
+      "title": "External Provider / Auth Sprint",
+      "state": "gated",
+      "label": "Foundation retained",
+      "summary": "Only use real provider credentials when a real feature needs them. No trophy metadata reads.",
+      "focus": [
+        "Assigned-token use only",
+        "Auth troubleshooting inside scope",
+        "No mutation without later gate"
+      ]
+    },
+    {
+      "id": "S5",
+      "title": "Cron / Scheduled Workflow Sprint",
+      "state": "queued",
+      "label": "Queued",
+      "summary": "Test scheduled jobs, watchdog behavior, and failure alerts after the current implementation tracks settle.",
+      "focus": [
+        "Script vs agent jobs",
+        "Failure visibility",
+        "Cleanup verification"
+      ]
+    },
+    {
+      "id": "S6",
+      "title": "Desktop / PC Software Sprint",
+      "state": "backlog",
+      "label": "Backlog",
+      "summary": "Build and package a small local desktop or CLI utility only after web and workflow tracks are proven.",
+      "focus": [
+        "Local filesystem handling",
+        "Packaging discipline",
+        "OS boundary evidence"
+      ]
+    },
+    {
+      "id": "S7",
+      "title": "Android APK Sprint",
+      "state": "queued",
+      "label": "Queued later",
+      "summary": "Produce a real debug APK when Android-specific delivery becomes the goal. PWA installability does not count as APK testing.",
+      "focus": [
+        "Real APK artifact",
+        "No production signing keys",
+        "Optional emulator/device verification"
+      ]
+    },
+    {
+      "id": "S8",
+      "title": "Controlled External Mutation Sprint",
+      "state": "approval",
+      "label": "Approval gate",
+      "summary": "Power tools and external mutations belong here only with exact target, rollback, and verification scope.",
+      "focus": [
+        "One exact approved mutation",
+        "Rollback and cleanup",
+        "No production drift"
+      ]
+    },
+    {
+      "id": "S9",
+      "title": "Long-running Autonomous Workflow Sprint",
+      "state": "later",
+      "label": "Later stage",
+      "summary": "Run a multi-card workflow over hours or days without micromanagement, while preserving status cadence and auditability.",
+      "focus": [
+        "Long-run reliability",
+        "Bounded blocker recovery",
+        "Clear audit trail"
+      ]
+    },
+    {
+      "id": "S10",
+      "title": "Farm Management App Autonomous Rebuild",
+      "state": "long_term",
+      "label": "Long-term target",
+      "summary": "The endgame is a Buu-built production-ready rebuild under explicit approval, not a momentum-based takeover.",
+      "focus": [
+        "Approved replacement scope",
+        "Serious code/test/deploy evidence",
+        "Human review gates stay intact"
+      ]
+    }
+  ],
+  "retainedEvidence": {
+    "id": "R4-K",
+    "verdict": "Retain with cautions",
+    "summary": "R4-K proved one narrow, secret-aware, read-only Cloudflare DNS connector lane for dns-worker only. It remains valid foundation evidence, not a blanket permission to explore providers.",
+    "confirmed": [
+      "Exact target-specific Cloudflare read-only metadata work succeeded.",
+      "No DNS mutation was performed.",
+      "Token handling stayed local and non-retained.",
+      "Reviewer kept the verdict at RETAIN WITH CAUTIONS."
+    ],
+    "cautions": [
+      "Do not generalize R4-K into broad provider discovery.",
+      "Mutation still requires a separate later gate.",
+      "Trust earned was narrow and role-specific to dns-worker.",
+      "Protected-state inspection remains out of bounds unless separately approved."
+    ]
+  },
+  "nextGate": {
+    "id": "S3",
+    "title": "Backend / API / Data Sprint",
+    "status": "Recommended after S1/S2 closeout",
+    "summary": "Once the live status PWA sprint is closed, the next clean capability gain is a small local API/data sprint with explicit contract, validation, and QA.",
+    "reasons": [
+      "It extends the web sprint into clean frontend/backend contracts.",
+      "It keeps provider work gated until a real feature needs it.",
+      "It strengthens the handoff chain before later mutation or long-running autonomy."
+    ]
+  },
+  "operatingRules": [
+    "Per-unique-blocker policy: up to three scoped resolution attempts for each blocker.",
+    "No Farm App work, Aku/OpenClaw edits, DNS mutation, database work, or unrelated deployments in this sprint.",
+    "Secrets stay out of code, artifacts, diffs, and live responses.",
+    "Implementation, security, QA, deployment, reviewer, and closeout each keep their own lane."
+  ]
+}

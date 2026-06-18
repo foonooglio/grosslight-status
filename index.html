@@ -1,471 +1,743 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Akumetsu — System Status</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#6d7dff" />
+  <meta name="description" content="Buu / Kanban live status PWA for Canonical Plan V2 serious sprint tracking." />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icons/icon.svg" />
+  <title>Buu / Kanban Status PWA</title>
   <style>
     :root {
-      --bg: #000;
-      --panel: #050505;
-      --border: #222;
-      --green: #39FF14;
-      --teal: #00FFDD;
-      --red: #FF2020;
-      --yellow: #FFD700;
-      --purple: #CC44FF;
-      --white: #FFFFFF;
-      --dim: #888;
+      color-scheme: dark;
+      --bg: #070b14;
+      --bg-elevated: #0d1322;
+      --panel: rgba(255, 255, 255, 0.04);
+      --panel-strong: rgba(255, 255, 255, 0.06);
+      --border: rgba(255, 255, 255, 0.09);
+      --border-soft: rgba(255, 255, 255, 0.05);
+      --text: #f6f7fb;
+      --muted: #adb6ca;
+      --soft: #8790a6;
+      --violet: #6d7dff;
+      --violet-2: #8794ff;
+      --teal: #58d8c8;
+      --gold: #f1c15f;
+      --green: #51d37d;
+      --amber: #f0b15d;
+      --red: #ff6b7b;
+      --shadow: 0 22px 60px rgba(0, 0, 0, 0.38);
+      --radius: 22px;
+      --radius-sm: 14px;
+      --max: 1180px;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
-      background: var(--bg);
-      color: var(--white);
-      font-family: 'Courier New', monospace;
-      font-weight: 900;
+      margin: 0;
       min-height: 100vh;
-      font-size: 16px;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(109, 125, 255, 0.22), transparent 30%),
+        radial-gradient(circle at top right, rgba(88, 216, 200, 0.12), transparent 28%),
+        linear-gradient(180deg, #0a1020 0%, var(--bg) 36%, #05070d 100%);
+      color: var(--text);
     }
 
-    /* HEADER */
-    header {
-      background: var(--panel);
-      border-bottom: 3px solid var(--green);
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    .header-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-    .logo {
-      color: var(--green);
-      font-size: 1.1rem;
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      text-shadow: 0 0 12px var(--green);
-    }
-    .logo-sub {
-      color: var(--teal);
-      font-size: 0.75rem;
-      font-weight: 700;
-      margin-top: 0.25rem;
-      text-shadow: 0 0 8px var(--teal);
-    }
-    .refresh-box {
-      background: #0a0a0a;
-      border: 2px solid var(--teal);
-      padding: 0.4rem 0.75rem;
-      text-align: right;
-      min-width: 130px;
-    }
-    .refresh-ts { color: var(--teal); font-size: 0.7rem; font-weight: 700; }
-    .refresh-count { color: var(--white); font-size: 0.75rem; font-weight: 900; margin-top: 0.2rem; }
-    .progress-bar { height: 3px; background: var(--border); margin-top: 0.4rem; }
-    .progress-fill { height: 100%; background: var(--teal); box-shadow: 0 0 6px var(--teal); transition: width 1s linear; }
+    a { color: inherit; }
 
-    /* MAIN GRID */
-    .main { padding: 0.75rem; display: flex; flex-direction: column; gap: 0.75rem; }
-
-    /* INSTRUMENT PANEL */
-    .panel {
-      background: var(--panel);
-      border: 2px solid var(--border);
+    .shell {
+      width: min(calc(100% - 24px), var(--max));
+      margin: 0 auto;
+      padding: 16px 0 56px;
     }
-    .panel-header {
+
+    .topbar {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.6rem 0.75rem;
-      border-bottom: 2px solid var(--border);
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 0 18px;
+      border-bottom: 1px solid var(--border-soft);
+      margin-bottom: 24px;
     }
-    .panel-icon { font-size: 1rem; }
-    .panel-title {
-      font-size: 0.75rem;
-      font-weight: 900;
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(109, 125, 255, 0.28), rgba(88, 216, 200, 0.18));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), var(--shadow);
+      overflow: hidden;
+    }
+
+    .brand-mark::before {
+      content: "";
+      width: 25px;
+      height: 25px;
+      border-radius: 9px;
+      border: 2px solid rgba(255,255,255,0.86);
+      box-shadow: 0 0 0 6px rgba(109,125,255,0.22);
+    }
+
+    .eyebrow {
+      margin: 0 0 4px;
+      font-size: 0.78rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-    }
-    .panel-title.green { color: var(--green); text-shadow: 0 0 8px var(--green); }
-    .panel-title.teal { color: var(--teal); text-shadow: 0 0 8px var(--teal); }
-    .panel-title.purple { color: var(--purple); text-shadow: 0 0 8px var(--purple); }
-    .panel-title.yellow { color: var(--yellow); text-shadow: 0 0 8px var(--yellow); }
-    .panel-body { padding: 0.5rem 0; }
-
-    /* INSTRUMENT ROW */
-    .instrument {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      padding: 0.75rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .instrument:last-child { border-bottom: none; }
-    .instrument-top { display: flex; align-items: center; gap: 0.6rem; }
-    .instrument-bottom { padding-left: 1.5rem; }
-    .status-light {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      flex-shrink: 0;
-    }
-    .light-green { background: var(--green); border-color: var(--green); box-shadow: 0 0 8px var(--green), 0 0 16px var(--green); }
-    .light-red { background: var(--red); border-color: var(--red); box-shadow: 0 0 8px var(--red), 0 0 16px var(--red); animation: pulse-red 1.5s infinite; }
-    .light-yellow { background: var(--yellow); border-color: var(--yellow); box-shadow: 0 0 8px var(--yellow); animation: pulse-yellow 2s infinite; }
-    .light-teal { background: var(--teal); border-color: var(--teal); box-shadow: 0 0 8px var(--teal); }
-    .light-purple { background: var(--purple); border-color: var(--purple); box-shadow: 0 0 8px var(--purple); }
-    .light-dim { background: #333; border-color: #555; }
-
-    @keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:0.4} }
-    @keyframes pulse-yellow { 0%,100%{opacity:1} 50%{opacity:0.6} }
-
-    .instrument-name {
-      font-size: 1rem;
-      font-weight: 900;
-      color: var(--white);
-      line-height: 1.2;
-    }
-    .instrument-sub {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--dim);
-      margin-top: 0.15rem;
-      display: block;
-    }
-
-    /* STATUS BADGE */
-    .status-badge {
-      font-size: 0.8rem;
-      font-weight: 900;
-      padding: 0.3rem 0.8rem;
-      border: 2px solid;
-      letter-spacing: 0.06em;
-      white-space: nowrap;
-      display: inline-block;
-    }
-    .badge-green { color: var(--green); border-color: var(--green); background: rgba(57,255,20,0.08); text-shadow: 0 0 6px var(--green); }
-    .badge-red { color: var(--red); border-color: var(--red); background: rgba(255,32,32,0.1); text-shadow: 0 0 6px var(--red); }
-    .badge-yellow { color: var(--yellow); border-color: var(--yellow); background: rgba(255,215,0,0.08); }
-    .badge-teal { color: var(--teal); border-color: var(--teal); background: rgba(0,255,221,0.08); text-shadow: 0 0 6px var(--teal); }
-    .badge-purple { color: var(--purple); border-color: var(--purple); background: rgba(204,68,255,0.08); }
-    .badge-dim { color: var(--dim); border-color: #444; background: transparent; }
-
-    /* COMMIT ITEMS */
-    .commit {
-      padding: 0.6rem 0.75rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .commit:last-child { border-bottom: none; }
-    .commit-msg {
-      font-size: 0.85rem;
-      font-weight: 900;
-      color: var(--white);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .commit-time {
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: var(--green);
-      margin-top: 0.2rem;
-      text-shadow: 0 0 6px var(--green);
-    }
-
-    /* TWO COLUMN ON LARGER SCREENS */
-    @media (min-width: 640px) {
-      .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-    }
-
-    /* LOADING */
-    .loading {
-      padding: 1rem 0.75rem;
       color: var(--teal);
-      font-size: 0.85rem;
-      font-weight: 900;
-      animation: blink 1s infinite;
     }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
-    footer {
-      text-align: center;
-      padding: 1rem;
-      font-size: 0.7rem;
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(1.2rem, 3vw, 1.65rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill,
+    .button {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      padding: 10px 14px;
+      font: inherit;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .pill-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 0 5px rgba(81, 211, 125, 0.16);
+    }
+
+    .button {
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .button.primary {
+      background: linear-gradient(135deg, rgba(109,125,255,0.92), rgba(127,140,255,0.88));
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 14px 28px rgba(109,125,255,0.28);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 100%;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -15% -35% 28%;
+      height: 240px;
+      background: radial-gradient(circle, rgba(109,125,255,0.3), transparent 60%);
+      pointer-events: none;
+    }
+
+    .status-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.86rem;
+      border: 1px solid transparent;
+    }
+
+    .badge.active { background: rgba(81, 211, 125, 0.12); color: #b7f2c8; border-color: rgba(81, 211, 125, 0.22); }
+    .badge.gated { background: rgba(241, 193, 95, 0.14); color: #ffe3ab; border-color: rgba(241, 193, 95, 0.2); }
+    .badge.violet { background: rgba(109,125,255,0.16); color: #d5dbff; border-color: rgba(109,125,255,0.22); }
+
+    .hero h2 {
+      margin: 0 0 14px;
+      font-size: clamp(1.9rem, 4vw, 3.15rem);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      max-width: 13ch;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-copy {
+      margin: 0 0 16px;
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--muted);
+      max-width: 62ch;
+      position: relative;
+      z-index: 1;
+    }
+
+    .checkpoint-list,
+    .simple-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      display: grid;
+      gap: 10px;
+      line-height: 1.55;
+      position: relative;
+      z-index: 1;
+    }
+
+    .meta-card h3,
+    .section-head h3,
+    .sidebar h3,
+    .evidence-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.02rem;
+      letter-spacing: -0.02em;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .metric {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-soft);
+    }
+
+    .metric-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--soft);
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 1.45rem;
       font-weight: 700;
-      color: var(--dim);
-      border-top: 2px solid var(--border);
+      letter-spacing: -0.04em;
+      margin-bottom: 4px;
+    }
+
+    .metric-sub {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .section-card {
+      display: grid;
+      gap: 18px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .section-head p,
+    .meta-card p,
+    .sidebar p,
+    .evidence-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .roadmap-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .track {
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px solid var(--border-soft);
+      background: rgba(255,255,255,0.025);
+      display: grid;
+      gap: 12px;
+    }
+
+    .track-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .track-id {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--soft);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .track-id::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--violet);
+      box-shadow: 0 0 0 4px rgba(109,125,255,0.18);
+    }
+
+    .track h4 {
+      margin: 0;
+      font-size: 1.08rem;
+      letter-spacing: -0.02em;
+    }
+
+    .state-chip {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .state-active { background: rgba(81,211,125,0.14); color: #bdf2ca; border-color: rgba(81,211,125,0.2); }
+    .state-next { background: rgba(109,125,255,0.16); color: #d9deff; border-color: rgba(109,125,255,0.22); }
+    .state-gated, .state-approval { background: rgba(241,193,95,0.14); color: #ffe3ab; border-color: rgba(241,193,95,0.2); }
+    .state-queued { background: rgba(88,216,200,0.12); color: #bef7f0; border-color: rgba(88,216,200,0.18); }
+    .state-backlog, .state-later, .state-long_term { background: rgba(255,255,255,0.06); color: #d3d8e4; border-color: rgba(255,255,255,0.1); }
+
+    .track p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.95rem;
+    }
+
+    .focus-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--text);
+      display: grid;
+      gap: 8px;
+      font-size: 0.92rem;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 16px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .evidence-card {
+      display: grid;
+      gap: 14px;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--soft);
+    }
+
+    .kicker::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--gold);
+      box-shadow: 0 0 0 5px rgba(241,193,95,0.12);
+    }
+
+    .callout {
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(241,193,95,0.22);
+      background: rgba(241,193,95,0.08);
+      color: #ffe8be;
+      line-height: 1.55;
+    }
+
+    .rule-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .rule {
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid var(--border-soft);
+      background: rgba(255,255,255,0.024);
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .footer {
+      margin-top: 22px;
+      padding: 18px 0 0;
+      border-top: 1px solid var(--border-soft);
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--soft);
+      font-size: 0.9rem;
+      flex-wrap: wrap;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 980px) {
+      .hero,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .shell {
+        width: min(calc(100% - 20px), var(--max));
+        padding-top: 12px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+      }
+
+      .top-actions {
+        justify-content: flex-start;
+      }
+
+      .card {
+        padding: 18px;
+        border-radius: 18px;
+      }
+
+      .roadmap-grid,
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero h2 {
+        max-width: none;
+      }
     }
   </style>
 </head>
 <body>
-
-<header>
-  <div class="header-top">
-    <div>
-      <div class="logo">⬡ AKUMETSU SECT</div>
-      <div class="logo-sub">SYSTEM STATUS · Sect Master: Aku · Ancestor: Charles Grosslight</div>
-    </div>
-    <div class="refresh-box">
-      <div class="refresh-ts" id="ts">—</div>
-      <div class="refresh-count">REFRESH IN <span id="countdown">30</span>s</div>
-      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:100%"></div></div>
-    </div>
-  </div>
-</header>
-
-<div class="main">
-
-  <div class="two-col">
-
-    <!-- INFRASTRUCTURE -->
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-icon">⚡</span>
-        <span class="panel-title green">Infrastructure</span>
-      </div>
-      <div class="panel-body" id="infra">
-        <div class="loading">SCANNING...</div>
-      </div>
-    </div>
-
-    <!-- SUBDOMAINS -->
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-icon">🌐</span>
-        <span class="panel-title teal">Active Subdomains</span>
-      </div>
-      <div class="panel-body" id="subdomains">
-        <div class="loading">PINGING...</div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- TOKEN USAGE -->
-  <div class="panel">
-    <div class="panel-header">
-      <span class="panel-icon">⚡</span>
-      <span class="panel-title" style="color:var(--yellow);text-shadow:0 0 8px var(--yellow)">Anthropic API — Token Usage</span>
-    </div>
-    <div class="panel-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);">
-        <div style="background:var(--bg);padding:1rem 0.75rem;">
-          <div style="font-size:0.7rem;font-weight:900;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;">TOKENS IN</div>
-          <div style="font-size:1.6rem;font-weight:900;color:var(--teal);text-shadow:0 0 12px var(--teal);line-height:1;">278,854,178</div>
-          <div style="font-size:0.7rem;font-weight:700;color:var(--dim);margin-top:0.3rem;">Context &amp; prompts sent to AI</div>
-        </div>
-        <div style="background:var(--bg);padding:1rem 0.75rem;">
-          <div style="font-size:0.7rem;font-weight:900;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;">TOKENS OUT</div>
-          <div style="font-size:1.6rem;font-weight:900;color:var(--green);text-shadow:0 0 12px var(--green);line-height:1;">436,571</div>
-          <div style="font-size:0.7rem;font-weight:700;color:var(--dim);margin-top:0.3rem;">AI responses generated</div>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <p class="eyebrow">status.grosslightconsulting.com</p>
+          <h1>Buu / Kanban Status PWA</h1>
+          <p>Canonical Plan V2 status surface for serious sprint execution and evidence-aware handoffs.</p>
         </div>
       </div>
-      <div style="padding:0.6rem 0.75rem;font-size:0.7rem;font-weight:700;color:var(--dim);border-top:1px solid var(--border);">
-        ⚠ Manual update required — Anthropic usage API not publicly accessible
+      <div class="top-actions">
+        <div class="pill"><span class="pill-dot"></span><span id="statusLine">Loading status surface…</span></div>
+        <button class="button primary hidden" id="installButton" type="button">Install app</button>
       </div>
-    </div>
-  </div>
+    </header>
 
-  <div class="two-col">
+    <section class="hero">
+      <article class="card hero-card">
+        <div class="status-row">
+          <span class="badge active" id="currentSprintBadge">Implementing now</span>
+          <span class="badge violet">Canonical Plan V2</span>
+          <span class="badge gated">R4-K retained with cautions</span>
+        </div>
+        <h2 id="heroTitle">S1/S2 live status sprint in motion.</h2>
+        <p class="hero-copy" id="heroSummary">This status surface tracks the real implementation sprint that replaces the stale page with a serious Buu/Kanban PWA, while keeping security cleanup and handoff gates visible.</p>
+        <ol class="checkpoint-list" id="checkpointList">
+          <li>Replace stale status content with Buu/Kanban dashboard UI.</li>
+          <li>Keep the experience useful on phone and desktop.</li>
+          <li>Return safe no-secret status JSON from /api/status.</li>
+          <li>Hand off cleanly into security, QA, deployment, and review lanes.</li>
+        </ol>
+      </article>
 
-    <!-- SECT ROSTER -->
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-icon">⚔️</span>
-        <span class="panel-title purple">Sect Roster</span>
-      </div>
-      <div class="panel-body">
-        <div class="instrument">
-          <div class="instrument-top">
-            <div class="status-light light-purple"></div>
-            <div class="instrument-name">Charles Grosslight</div>
+      <aside class="card meta-card">
+        <h3>Execution snapshot</h3>
+        <p>This page reflects the approved serious sprint lane, not a generic health dashboard.</p>
+        <div class="meta-grid">
+          <div class="metric">
+            <div class="metric-label">Roadmap tracks</div>
+            <div class="metric-value" id="metricTracks">10</div>
+            <div class="metric-sub">S1 through S10 represented in one surface.</div>
           </div>
-          <div class="instrument-bottom">
-            <span class="instrument-sub">Ancestor · All Domains</span>
-            <span class="status-badge badge-purple">ANCESTOR</span>
+          <div class="metric">
+            <div class="metric-label">Active now</div>
+            <div class="metric-value" id="metricActive">2</div>
+            <div class="metric-sub">S1 Kanban + S2 Web/PWA are the current live pair.</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Next gate</div>
+            <div class="metric-value" id="metricNext">S3</div>
+            <div class="metric-sub" id="metricNextCopy">Backend / API / Data Sprint follows S1/S2 closeout.</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Last refresh</div>
+            <div class="metric-value" id="generatedAt">—</div>
+            <div class="metric-sub">Pulled from the safe local status packet.</div>
           </div>
         </div>
-        <div class="instrument">
-          <div class="instrument-top">
-            <div class="status-light light-green"></div>
-            <div class="instrument-name">Aku</div>
-          </div>
-          <div class="instrument-bottom">
-            <span class="instrument-sub">Sect Master · All Domains</span>
-            <span class="status-badge badge-green">ACTIVE</span>
-          </div>
-        </div>
-        <div class="instrument">
-          <div class="instrument-top">
-            <div class="status-light" id="bb-light"></div>
-            <div class="instrument-name">Brief Builder</div>
-          </div>
-          <div class="instrument-bottom">
-            <span class="instrument-sub">Inner Disciple · Hall of Alchemy</span>
-            <span class="status-badge" id="bb-badge">—</span>
-          </div>
-        </div>
-        <div class="instrument">
-          <div class="instrument-top">
-            <div class="status-light light-yellow"></div>
-            <div class="instrument-name">Vibe Coder</div>
-          </div>
-          <div class="instrument-bottom">
-            <span class="instrument-sub">Outer Disciple · Hall of Cultivation</span>
-            <span class="status-badge badge-yellow">ON DEMAND</span>
-          </div>
-        </div>
-      </div>
-    </div>
+      </aside>
+    </section>
 
-    <!-- VAULT ACTIVITY -->
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-icon">📜</span>
-        <span class="panel-title yellow">Vault Activity</span>
-      </div>
-      <div class="panel-body" id="commits">
-        <div class="loading">LOADING...</div>
-      </div>
-    </div>
+    <section class="grid">
+      <div class="section-card">
+        <article class="card">
+          <div class="section-head">
+            <div>
+              <h3>Canonical Plan V2 roadmap</h3>
+              <p>The live surface keeps the whole serious-sprint ladder visible so Charles can see what is active now, what is queued, and what remains gated.</p>
+            </div>
+            <div class="pill">Current sprint: <strong id="currentSprintId">S1S2-001-LIVE</strong></div>
+          </div>
+          <div class="roadmap-grid" id="roadmapGrid"></div>
+        </article>
 
+        <article class="card">
+          <div class="section-head">
+            <div>
+              <h3>Why this sprint matters</h3>
+              <p>S1 validates Kanban workflow under real implementation pressure. S2 proves a visible web/PWA slice can be built, checked, and handed off without scope drift.</p>
+            </div>
+          </div>
+          <div class="rule-list" id="ruleList"></div>
+        </article>
+      </div>
+
+      <aside class="sidebar">
+        <article class="card evidence-card">
+          <span class="kicker">Retained foundation evidence</span>
+          <h3 id="evidenceTitle">R4-K — Retain with cautions</h3>
+          <p id="evidenceSummary">R4-K remains valid as narrow foundation evidence only. It is not a license for broad provider exploration.</p>
+          <div>
+            <h3>Confirmed</h3>
+            <ul class="simple-list" id="confirmedList"></ul>
+          </div>
+          <div>
+            <h3>Cautions</h3>
+            <ul class="simple-list" id="cautionList"></ul>
+          </div>
+        </article>
+
+        <article class="card evidence-card">
+          <span class="kicker">Next recommended sprint</span>
+          <h3 id="nextTitle">S3 — Backend / API / Data Sprint</h3>
+          <p id="nextSummary">After the live status PWA closes, the cleanest next gain is a local API/data sprint with explicit contract and QA.</p>
+          <ul class="simple-list" id="nextReasons"></ul>
+        </article>
+
+        <article class="card evidence-card">
+          <span class="kicker">Current gate discipline</span>
+          <div class="callout">Deployment stays outside the frontend lane here. This implementation surface is ready for security audit, QA, deployment-worker handoff, live QA, reviewer synthesis, and Buu closeout.</div>
+        </article>
+      </aside>
+    </section>
+
+    <footer class="footer">
+      <span>Safe API mode: <strong id="apiMode">loading</strong></span>
+      <span>Manifest + icon included for basic installability. No provider secrets are embedded in this surface.</span>
+    </footer>
   </div>
 
-</div>
+  <script>
+    const installButton = document.getElementById('installButton');
+    let deferredPrompt = null;
 
-<footer>AKUMETSU SECT · grosslightconsulting.com · Auto-refresh 30s · Status checks use zero AI tokens</footer>
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      deferredPrompt = event;
+      installButton.classList.remove('hidden');
+    });
 
-<script>
-const API = '/api/status';
-let timer = 30;
-let interval;
+    installButton.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installButton.classList.add('hidden');
+    });
 
-function lightClass(online) {
-  return online ? 'light-green' : 'light-red';
-}
-function badgeClass(online) {
-  return online ? 'badge-green' : 'badge-red';
-}
-function badgeText(online) {
-  return online ? 'ONLINE' : 'OFFLINE';
-}
+    function formatTimestamp(value) {
+      if (!value) return '—';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      }).format(date);
+    }
 
-async function fetchStatus() {
-  try {
-    const res = await fetch(API);
-    const d = await res.json();
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
 
-    document.getElementById('ts').textContent = new Date(d.timestamp).toLocaleString();
+    function listItems(items) {
+      return items.map(item => `<li>${escapeHtml(item)}</li>`).join('');
+    }
 
-    const gwOnline = d.gateway === 'online';
-    const bbOnline = d.briefBuilder === 'online';
-
-    // Infrastructure
-    document.getElementById('infra').innerHTML = `
-      <div class="instrument">
-        <div class="instrument-top">
-          <div class="status-light ${lightClass(gwOnline)}"></div>
-          <div class="instrument-name">OpenClaw Gateway</div>
-        </div>
-        <div class="instrument-bottom">
-          <span class="instrument-sub">VPS · Port 18789</span>
-          <span class="status-badge ${badgeClass(gwOnline)}">${badgeText(gwOnline)}</span>
-        </div>
-      </div>
-      <div class="instrument">
-        <div class="instrument-top">
-          <div class="status-light ${lightClass(bbOnline)}"></div>
-          <div class="instrument-name">Brief Builder</div>
-        </div>
-        <div class="instrument-bottom">
-          <span class="instrument-sub">VPS · Port 3100</span>
-          <span class="status-badge ${badgeClass(bbOnline)}">${badgeText(bbOnline)}</span>
-        </div>
-      </div>
-      <div class="instrument">
-        <div class="instrument-top">
-          <div class="status-light light-teal"></div>
-          <div class="instrument-name">Hetzner VPS</div>
-        </div>
-        <div class="instrument-bottom">
-          <span class="instrument-sub">GC-ubuntu-4gb-ash-1 · Ashburn VA</span>
-          <span class="status-badge badge-teal">ONLINE</span>
-        </div>
-      </div>
-    `;
-
-    // Brief Builder roster badge
-    const bbLight = document.getElementById('bb-light');
-    const bbBadge = document.getElementById('bb-badge');
-    bbLight.className = `status-light ${lightClass(bbOnline)}`;
-    bbBadge.className = `status-badge ${badgeClass(bbOnline)}`;
-    bbBadge.textContent = badgeText(bbOnline);
-
-    // Subdomains
-    const subs = [
-      ['app', 'app.grosslightconsulting.com', 'Intake App'],
-      ['iglesiasdairy', 'iglesiasdairy.grosslightconsulting.com', 'Iglesias Dairy'],
-      ['backlog', 'backlog.grosslightconsulting.com', 'Build Backlog'],
-    ];
-    document.getElementById('subdomains').innerHTML = subs.map(([key, url, label]) => {
-      const code = d.subdomains[key];
-      const ok = code === 200;
-      return `
-        <div class="instrument">
-          <div class="instrument-top">
-            <div class="status-light ${lightClass(ok)}"></div>
-            <div class="instrument-name">${label}</div>
+    function renderRoadmap(roadmap) {
+      const container = document.getElementById('roadmapGrid');
+      container.innerHTML = roadmap.map(track => `
+        <article class="track">
+          <div class="track-top">
+            <div>
+              <div class="track-id">${escapeHtml(track.id)}</div>
+              <h4>${escapeHtml(track.title)}</h4>
+            </div>
+            <span class="state-chip state-${escapeHtml(track.state)}">${escapeHtml(track.label)}</span>
           </div>
-          <div class="instrument-bottom">
-            <span class="instrument-sub">${url}</span>
-            <span class="instrument-sub" style="color:var(--teal);margin-top:0.2rem;">Last deploy: ${d.deployTimes[key] ? new Date(d.deployTimes[key]).toLocaleString() : '—'}</span>
-            <span class="status-badge ${badgeClass(ok)}">${ok ? 'LIVE' : code || 'DOWN'}</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    // Vault commits
-    if (d.commits && d.commits.length) {
-      document.getElementById('commits').innerHTML = d.commits.map(c => `
-        <div class="commit">
-          <div class="commit-msg">${c.message}</div>
-          <div class="commit-time">▶ ${c.time}</div>
-        </div>
+          <p>${escapeHtml(track.summary)}</p>
+          <ul class="focus-list">${listItems(track.focus)}</ul>
+        </article>
       `).join('');
-    } else {
-      document.getElementById('commits').innerHTML = '<div class="loading">NO COMMITS FOUND</div>';
     }
 
-  } catch(e) {
-    document.getElementById('infra').innerHTML = '<div class="loading">⚠ CONNECTION ERROR — RETRYING</div>';
-  }
-}
-
-function startTimer() {
-  clearInterval(interval);
-  timer = 30;
-  document.getElementById('progress').style.width = '100%';
-  interval = setInterval(() => {
-    timer--;
-    document.getElementById('countdown').textContent = timer;
-    document.getElementById('progress').style.width = (timer / 30 * 100) + '%';
-    if (timer <= 0) {
-      fetchStatus();
-      timer = 30;
-      document.getElementById('progress').style.width = '100%';
+    function renderRules(items) {
+      const container = document.getElementById('ruleList');
+      container.innerHTML = items.map(item => `<div class="rule">${escapeHtml(item)}</div>`).join('');
     }
-  }, 1000);
-}
 
-fetchStatus();
-startTimer();
-</script>
+    function hydrate(data) {
+      const activeCount = data.roadmap.filter(track => track.state === 'active').length;
+      document.getElementById('statusLine').textContent = data.currentSprint.statusLine;
+      document.getElementById('currentSprintBadge').textContent = data.currentSprint.badge;
+      document.getElementById('heroTitle').textContent = `${data.currentSprint.id} — ${data.currentSprint.title}`;
+      document.getElementById('heroSummary').textContent = data.currentSprint.summary;
+      document.getElementById('checkpointList').innerHTML = listItems(data.currentSprint.checkpoints);
+      document.getElementById('metricTracks').textContent = String(data.roadmap.length);
+      document.getElementById('metricActive').textContent = String(activeCount);
+      document.getElementById('metricNext').textContent = data.nextGate.id;
+      document.getElementById('metricNextCopy').textContent = `${data.nextGate.title} follows S1/S2 closeout.`;
+      document.getElementById('generatedAt').textContent = formatTimestamp(data.generatedAt);
+      document.getElementById('currentSprintId').textContent = data.currentSprint.id;
+      document.getElementById('evidenceTitle').textContent = `${data.retainedEvidence.id} — ${data.retainedEvidence.verdict}`;
+      document.getElementById('evidenceSummary').textContent = data.retainedEvidence.summary;
+      document.getElementById('confirmedList').innerHTML = listItems(data.retainedEvidence.confirmed);
+      document.getElementById('cautionList').innerHTML = listItems(data.retainedEvidence.cautions);
+      document.getElementById('nextTitle').textContent = `${data.nextGate.id} — ${data.nextGate.title}`;
+      document.getElementById('nextSummary').textContent = data.nextGate.summary;
+      document.getElementById('nextReasons').innerHTML = listItems(data.nextGate.reasons);
+      document.getElementById('apiMode').textContent = data.apiMode || 'safe-static-status';
+
+      renderRoadmap(data.roadmap);
+      renderRules(data.operatingRules);
+    }
+
+    async function loadStatus() {
+      try {
+        const response = await fetch('/api/status', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        hydrate(data);
+      } catch (error) {
+        document.getElementById('statusLine').textContent = 'Local preview loaded without live API response.';
+        document.getElementById('apiMode').textContent = 'api-unavailable';
+        document.getElementById('generatedAt').textContent = 'preview';
+      }
+    }
+
+    loadStatus();
+  </script>
 </body>
 </html>

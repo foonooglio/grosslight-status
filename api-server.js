@@ -1,81 +1,78 @@
 const http = require('http');
-const https = require('https');
-const { execSync } = require('child_process');
-const net = require('net');
+const fs = require('fs/promises');
+const path = require('path');
 
-const PORT = 3200;
+const PORT = process.env.PORT || 3200;
+const ROOT = process.cwd();
 
-function checkPort(port) {
-  return new Promise(resolve => {
-    const sock = new net.Socket();
-    sock.setTimeout(2000);
-    sock.on('connect', () => { sock.destroy(); resolve(true); });
-    sock.on('error', () => resolve(false));
-    sock.on('timeout', () => resolve(false));
-    sock.connect(port, '127.0.0.1');
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8'
+};
+
+async function loadStatusData() {
+  const raw = await fs.readFile(path.join(ROOT, 'status-data.json'), 'utf8');
+  return JSON.parse(raw);
+}
+
+function sendJson(res, statusCode, body) {
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store, max-age=0',
+    'Access-Control-Allow-Origin': '*'
   });
+  res.end(JSON.stringify(body, null, 2));
 }
 
-function checkUrl(url) {
-  return new Promise(resolve => {
-    const mod = url.startsWith('https') ? https : http;
-    const req = mod.get(url, { timeout: 5000 }, res => {
-      resolve(res.statusCode);
-      res.resume();
-    });
-    req.on('error', () => resolve(0));
-    req.on('timeout', () => { req.destroy(); resolve(0); });
+async function serveStatic(res, relativePath) {
+  const filePath = path.join(ROOT, relativePath);
+  const ext = path.extname(filePath);
+  const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+  const content = await fs.readFile(filePath);
+  res.writeHead(200, {
+    'Content-Type': mimeType,
+    'Cache-Control': ext === '.html' ? 'no-store' : 'public, max-age=300'
   });
-}
-
-function getVaultCommits() {
-  try {
-    const out = execSync(
-      'cd /home/charles/vaults/obsidian-working && git log -5 --format="%ar|%s"',
-      { encoding: 'utf8', timeout: 5000 }
-    ).trim();
-    return out.split('\n').map(l => {
-      const [time, ...msg] = l.split('|');
-      return { time: time.trim(), message: msg.join('|').trim() };
-    });
-  } catch { return []; }
-}
-
-async function getStatus() {
-  const [gateway, briefBuilder] = await Promise.all([
-    checkPort(18789),
-    checkPort(3100),
-  ]);
-
-  const subdomains = {};
-  const checks = [
-    ['iglesiasdairy', 'https://iglesiasdairy.grosslightconsulting.com'],
-    ['app', 'https://app.grosslightconsulting.com'],
-    ['backlog', 'https://backlog.grosslightconsulting.com'],
-  ];
-  for (const [name, url] of checks) {
-    subdomains[name] = await checkUrl(url);
-  }
-
-  return {
-    gateway: gateway ? 'online' : 'offline',
-    briefBuilder: briefBuilder ? 'online' : 'offline',
-    commits: getVaultCommits(),
-    subdomains,
-    timestamp: new Date().toISOString(),
-  };
+  res.end(content);
 }
 
 const server = http.createServer(async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Content-Type', 'application/json');
-  if (req.url === '/api/status') {
-    const data = await getStatus();
-    res.end(JSON.stringify(data));
-  } else {
-    res.writeHead(404);
-    res.end('{}');
+  try {
+    const url = new URL(req.url, `http://localhost:${PORT}`);
+
+    if (url.pathname === '/api/status') {
+      const data = await loadStatusData();
+      return sendJson(res, 200, {
+        ...data,
+        generatedAt: new Date().toISOString(),
+        apiMode: 'safe-static-status'
+      });
+    }
+
+    if (url.pathname === '/' || url.pathname === '/index.html') {
+      return serveStatic(res, 'index.html');
+    }
+
+    const staticPath = url.pathname.replace(/^\//, '');
+    return serveStatic(res, staticPath);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return sendJson(res, 404, { error: 'not_found' });
+    }
+
+    return sendJson(res, 500, {
+      error: 'server_error',
+      message: error.message,
+      generatedAt: new Date().toISOString()
+    });
   }
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`Status API running on port ${PORT}`));
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Buu status server running at http://127.0.0.1:${PORT}`);
+});

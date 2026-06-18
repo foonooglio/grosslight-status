@@ -1,0 +1,17 @@
+{
+  "name": "Buu / Kanban Status PWA",
+  "short_name": "Buu Status",
+  "description": "Canonical Plan V2 serious-sprint status board for Buu/Kanban.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070b14",
+  "theme_color": "#6d7dff",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

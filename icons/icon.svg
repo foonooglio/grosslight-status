@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Buu Kanban Status PWA Icon</title>
+  <desc id="desc">A dark rounded-square icon with a violet grid, a teal status pulse, and a gold progress path.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1322"/>
+      <stop offset="100%" stop-color="#060910"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7f8cff"/>
+      <stop offset="100%" stop-color="#5fded1"/>
+    </linearGradient>
+  </defs>
+  <rect x="24" y="24" width="464" height="464" rx="108" fill="url(#bg)"/>
+  <rect x="72" y="92" width="368" height="328" rx="36" fill="#101726" stroke="#2f3f69" stroke-width="10"/>
+  <path d="M122 172h268M122 256h268M122 340h174" stroke="#35476f" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="344" cy="340" r="42" fill="#0c1d1f" stroke="#5fded1" stroke-width="12"/>
+  <circle cx="344" cy="340" r="16" fill="#5fded1"/>
+  <path d="M136 126h112" stroke="#7f8cff" stroke-width="18" stroke-linecap="round"/>
+  <path d="M280 126h96" stroke="#f1c15f" stroke-width="18" stroke-linecap="round"/>
+  <path d="M136 390c60-38 99-56 158-56 33 0 61 6 102 22" fill="none" stroke="url(#accent)" stroke-width="18" stroke-linecap="round"/>
+</svg>
