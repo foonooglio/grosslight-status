@@ -1,6 +1,6 @@
 const {
   buildErrorResponse,
-  buildStatusResponse,
+  buildRoadmapResponse,
   loadAndValidateStatusData
 } = require('../lib/status-contract');
 
@@ -11,7 +11,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const data = await loadAndValidateStatusData();
-    res.status(200).json(buildStatusResponse(data));
+    res.status(200).json(buildRoadmapResponse(data));
   } catch (error) {
     res.status(500).json(buildErrorResponse(error));
   }

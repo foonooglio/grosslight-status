@@ -1,6 +1,13 @@
 const http = require('http');
 const fs = require('fs/promises');
 const path = require('path');
+const {
+  buildErrorResponse,
+  buildHealthResponse,
+  buildRoadmapResponse,
+  buildStatusResponse,
+  loadAndValidateStatusData
+} = require('./lib/status-contract');
 
 const PORT = process.env.PORT || 3200;
 const ROOT = process.cwd();
@@ -14,11 +21,6 @@ const MIME_TYPES = {
   '.css': 'text/css; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8'
 };
-
-async function loadStatusData() {
-  const raw = await fs.readFile(path.join(ROOT, 'status-data.json'), 'utf8');
-  return JSON.parse(raw);
-}
 
 function sendJson(res, statusCode, body) {
   res.writeHead(statusCode, {
@@ -46,12 +48,17 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${PORT}`);
 
     if (url.pathname === '/api/status') {
-      const data = await loadStatusData();
-      return sendJson(res, 200, {
-        ...data,
-        generatedAt: new Date().toISOString(),
-        apiMode: 'safe-static-status'
-      });
+      const data = await loadAndValidateStatusData();
+      return sendJson(res, 200, buildStatusResponse(data));
+    }
+
+    if (url.pathname === '/api/health') {
+      return sendJson(res, 200, buildHealthResponse());
+    }
+
+    if (url.pathname === '/api/roadmap') {
+      const data = await loadAndValidateStatusData();
+      return sendJson(res, 200, buildRoadmapResponse(data));
     }
 
     if (url.pathname === '/' || url.pathname === '/index.html') {
@@ -63,6 +70,10 @@ const server = http.createServer(async (req, res) => {
   } catch (error) {
     if (error.code === 'ENOENT') {
       return sendJson(res, 404, { error: 'not_found' });
+    }
+
+    if (error.code === 'STATUS_DATA_INVALID') {
+      return sendJson(res, 500, buildErrorResponse(error));
     }
 
     return sendJson(res, 500, {

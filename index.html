@@ -167,6 +167,11 @@
       box-shadow: 0 14px 28px rgba(109,125,255,0.28);
     }
 
+    .pill[data-tone="loading"] { color: #d5dbff; border-color: rgba(109,125,255,0.22); }
+    .pill[data-tone="ready"] { color: #bdf2ca; border-color: rgba(81,211,125,0.22); }
+    .pill[data-tone="fallback"] { color: #ffe3ab; border-color: rgba(241,193,95,0.22); }
+    .pill[data-tone="error"] { color: #ffc2ca; border-color: rgba(255,107,123,0.24); }
+
     .hero {
       display: grid;
       grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
@@ -442,6 +447,64 @@
       line-height: 1.55;
     }
 
+    .sync-card {
+      margin-bottom: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .sync-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .sync-copy {
+      display: grid;
+      gap: 6px;
+    }
+
+    .sync-copy p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .state-note {
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--border-soft);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .state-note[data-tone="loading"] {
+      border-color: rgba(109,125,255,0.2);
+      background: rgba(109,125,255,0.08);
+      color: #dbe0ff;
+    }
+
+    .state-note[data-tone="ready"] {
+      border-color: rgba(81,211,125,0.2);
+      background: rgba(81,211,125,0.08);
+      color: #c9f8d6;
+    }
+
+    .state-note[data-tone="fallback"] {
+      border-color: rgba(241,193,95,0.22);
+      background: rgba(241,193,95,0.08);
+      color: #ffe8be;
+    }
+
+    .state-note[data-tone="error"] {
+      border-color: rgba(255,107,123,0.24);
+      background: rgba(255,107,123,0.08);
+      color: #ffd1d7;
+    }
+
     .rule-list {
       display: grid;
       gap: 12px;
@@ -525,6 +588,7 @@
       </div>
       <div class="top-actions">
         <div class="pill"><span class="pill-dot"></span><span id="statusLine">Loading status surface…</span></div>
+        <div class="pill" id="apiContractPill" data-tone="loading">API contract: loading…</div>
         <button class="button primary hidden" id="installButton" type="button">Install app</button>
       </div>
     </header>
@@ -570,8 +634,29 @@
             <div class="metric-value" id="generatedAt">—</div>
             <div class="metric-sub">Pulled from the safe local status packet.</div>
           </div>
+          <div class="metric">
+            <div class="metric-label">Contract version</div>
+            <div class="metric-value" id="contractVersion">loading</div>
+            <div class="metric-sub">Approved Status API contract consumed by this UI.</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">API health</div>
+            <div class="metric-value" id="apiHealth">checking</div>
+            <div class="metric-sub" id="apiHealthCopy">Waiting on /api/health and /api/roadmap.</div>
+          </div>
         </div>
       </aside>
+    </section>
+
+    <section class="card sync-card" id="surfaceStateCard">
+      <div class="sync-row">
+        <div class="sync-copy">
+          <h3>Status API sync state</h3>
+          <p id="surfaceStateMessage">Loading approved endpoints.</p>
+        </div>
+        <div class="pill" id="surfaceStateTone" data-tone="loading">Loading</div>
+      </div>
+      <div class="state-note" id="surfaceStateDetail" data-tone="loading">Waiting on /api/status, /api/health, and /api/roadmap.</div>
     </section>
 
     <section class="grid">
@@ -629,6 +714,8 @@
 
     <footer class="footer">
       <span>Safe API mode: <strong id="apiMode">loading</strong></span>
+      <span>Contract: <strong id="footerContractVersion">loading</strong></span>
+      <span>Health: <strong id="footerHealthState">checking</strong></span>
       <span>Manifest + icon included for basic installability. No provider secrets are embedded in this surface.</span>
     </footer>
   </div>
@@ -636,6 +723,81 @@
   <script>
     const installButton = document.getElementById('installButton');
     let deferredPrompt = null;
+    const FALLBACK_STATUS = {
+      contractVersion: 'status-api-v1',
+      generatedAt: null,
+      apiMode: 'fallback-static-status',
+      product: {
+        title: 'Buu / Kanban Status PWA',
+        subtitle: 'Canonical Plan V2 sprint board for serious autonomous work',
+        owner: 'Charles + Buu',
+        surface: 'status.grosslightconsulting.com'
+      },
+      currentSprint: {
+        id: 'S1S2-001-LIVE',
+        title: 'Live status PWA replacement sprint',
+        state: 'in_implementation',
+        badge: 'Static fallback',
+        summary: 'This local fallback keeps the UI readable when the approved Status API endpoints are unavailable.',
+        statusLine: 'Static fallback active while approved API endpoints recover.',
+        checkpoints: [
+          'Keep the status surface readable during API interruptions.',
+          'Expose clear loading, ready, and fallback UI states.',
+          'Show contract and health state directly in the interface.',
+          'Stay within the approved local-only status sprint scope.'
+        ]
+      },
+      roadmap: [
+        { id: 'S1', title: 'Kanban Dashboard Serious Sprint', state: 'active', label: 'Active now', summary: 'Dashboard and dispatch flow stay visible during real execution.', focus: ['Board/dashboard agreement', 'Dependency sequencing', 'No stale active leftovers'] },
+        { id: 'S2', title: 'Web / PWA App Sprint', state: 'active', label: 'Active now', summary: 'Frontend remains readable on phone and desktop even if the API is temporarily unavailable.', focus: ['Visible feature delivery', 'Responsive phone + desktop layout', 'Fallback handling'] },
+        { id: 'S3', title: 'Backend / API / Data Sprint', state: 'next', label: 'Next recommended', summary: 'Backend/API work remains the clean handoff path after the live sprint closes.', focus: ['Local API contract', 'Validation and edge cases', 'Frontend/backend alignment'] },
+        { id: 'S4', title: 'External Provider / Auth Sprint', state: 'gated', label: 'Foundation retained', summary: 'Provider work stays gated and outside this frontend fallback lane.', focus: ['Assigned-token use only', 'Auth troubleshooting inside scope', 'No mutation without later gate'] },
+        { id: 'S5', title: 'Cron / Scheduled Workflow Sprint', state: 'queued', label: 'Queued', summary: 'Scheduled workflow work follows the current frontend/backend alignment step.', focus: ['Script vs agent jobs', 'Failure visibility', 'Cleanup verification'] },
+        { id: 'S6', title: 'Desktop / PC Software Sprint', state: 'backlog', label: 'Backlog', summary: 'Desktop packaging remains later-stage work.', focus: ['Local filesystem handling', 'Packaging discipline', 'OS boundary evidence'] },
+        { id: 'S7', title: 'Android APK Sprint', state: 'queued', label: 'Queued later', summary: 'APK work remains distinct from PWA installability.', focus: ['Real APK artifact', 'No production signing keys', 'Optional emulator/device verification'] },
+        { id: 'S8', title: 'Controlled External Mutation Sprint', state: 'approval', label: 'Approval gate', summary: 'External mutation remains outside this status UI lane.', focus: ['One exact approved mutation', 'Rollback and cleanup', 'No production drift'] },
+        { id: 'S9', title: 'Long-running Autonomous Workflow Sprint', state: 'later', label: 'Later stage', summary: 'Long-run autonomy depends on clear status and contract visibility.', focus: ['Long-run reliability', 'Bounded blocker recovery', 'Clear audit trail'] },
+        { id: 'S10', title: 'Farm Management App Autonomous Rebuild', state: 'long_term', label: 'Long-term target', summary: 'Farm App rebuild remains out of scope for this status fallback lane.', focus: ['Approved replacement scope', 'Serious code/test/deploy evidence', 'Human review gates stay intact'] }
+      ],
+      retainedEvidence: {
+        id: 'R4-K',
+        verdict: 'Retain with cautions',
+        summary: 'Fallback mode preserves the narrow retained-evidence messaging already approved for the status surface.',
+        confirmed: [
+          'UI stays readable without provider calls or secrets.',
+          'Fallback mode remains local-only.',
+          'The approved sprint ladder stays visible.'
+        ],
+        cautions: [
+          'Fallback mode is not a substitute for a healthy API.',
+          'Frontend should return to live API data when endpoints recover.',
+          'No extra scope is implied by this local fallback.'
+        ]
+      },
+      nextGate: {
+        id: 'S3',
+        title: 'Backend / API / Data Sprint',
+        status: 'Recommended after S1/S2 closeout',
+        summary: 'The approved backend/API contract remains the next handoff lane.',
+        reasons: [
+          'Frontend and backend stay aligned on one contract version.',
+          'Fallback mode preserves continuity without expanding scope.',
+          'Provider work remains gated until later approval.'
+        ]
+      },
+      operatingRules: [
+        'Prefer approved Status API endpoints when available.',
+        'Use static fallback only when approved endpoints fail.',
+        'Keep contract version and health visible in the UI.',
+        'Do not broaden scope beyond the local status sprint.'
+      ]
+    };
+    const FALLBACK_HEALTH = {
+      contractVersion: 'status-api-v1',
+      ok: false,
+      service: 'grosslight-status',
+      generatedAt: null
+    };
 
     window.addEventListener('beforeinstallprompt', (event) => {
       event.preventDefault();
@@ -698,18 +860,42 @@
       container.innerHTML = items.map(item => `<div class="rule">${escapeHtml(item)}</div>`).join('');
     }
 
-    function hydrate(data) {
-      const activeCount = data.roadmap.filter(track => track.state === 'active').length;
+    function setSurfaceState(tone, label, message, detail) {
+      const tonePill = document.getElementById('surfaceStateTone');
+      const contractPill = document.getElementById('apiContractPill');
+      const detailNode = document.getElementById('surfaceStateDetail');
+
+      tonePill.dataset.tone = tone;
+      tonePill.textContent = label;
+      contractPill.dataset.tone = tone;
+      contractPill.textContent = `API contract: ${label.toLowerCase()}`;
+      detailNode.dataset.tone = tone;
+      document.getElementById('surfaceStateMessage').textContent = message;
+      detailNode.textContent = detail;
+    }
+
+    function ensureContract(payload, endpointName) {
+      if (!payload || payload.contractVersion !== 'status-api-v1') {
+        throw new Error(`${endpointName} returned an unexpected contract version.`);
+      }
+    }
+
+    function hydrate(data, health, sourceLabel) {
+      const roadmap = Array.isArray(data.roadmap) ? data.roadmap : [];
+      const activeCount = roadmap.filter(track => track.state === 'active').length;
+      const contractLabel = data.contractVersion || 'unknown';
+      const healthLabel = health && health.ok ? 'healthy' : 'fallback';
+
       document.getElementById('statusLine').textContent = data.currentSprint.statusLine;
       document.getElementById('currentSprintBadge').textContent = data.currentSprint.badge;
       document.getElementById('heroTitle').textContent = `${data.currentSprint.id} — ${data.currentSprint.title}`;
       document.getElementById('heroSummary').textContent = data.currentSprint.summary;
       document.getElementById('checkpointList').innerHTML = listItems(data.currentSprint.checkpoints);
-      document.getElementById('metricTracks').textContent = String(data.roadmap.length);
+      document.getElementById('metricTracks').textContent = String(roadmap.length);
       document.getElementById('metricActive').textContent = String(activeCount);
       document.getElementById('metricNext').textContent = data.nextGate.id;
-      document.getElementById('metricNextCopy').textContent = `${data.nextGate.title} follows S1/S2 closeout.`;
-      document.getElementById('generatedAt').textContent = formatTimestamp(data.generatedAt);
+      document.getElementById('metricNextCopy').textContent = `${data.nextGate.status}. ${data.nextGate.summary}`;
+      document.getElementById('generatedAt').textContent = data.generatedAt ? formatTimestamp(data.generatedAt) : sourceLabel;
       document.getElementById('currentSprintId').textContent = data.currentSprint.id;
       document.getElementById('evidenceTitle').textContent = `${data.retainedEvidence.id} — ${data.retainedEvidence.verdict}`;
       document.getElementById('evidenceSummary').textContent = data.retainedEvidence.summary;
@@ -718,22 +904,70 @@
       document.getElementById('nextTitle').textContent = `${data.nextGate.id} — ${data.nextGate.title}`;
       document.getElementById('nextSummary').textContent = data.nextGate.summary;
       document.getElementById('nextReasons').innerHTML = listItems(data.nextGate.reasons);
-      document.getElementById('apiMode').textContent = data.apiMode || 'safe-static-status';
+      document.getElementById('apiMode').textContent = `${data.apiMode || 'safe-static-status'} · ${sourceLabel}`;
+      document.getElementById('apiContractPill').textContent = `API contract: ${contractLabel}`;
+      document.getElementById('contractVersion').textContent = contractLabel;
+      document.getElementById('footerContractVersion').textContent = contractLabel;
+      document.getElementById('apiHealth').textContent = healthLabel;
+      document.getElementById('footerHealthState').textContent = healthLabel;
+      document.getElementById('apiHealthCopy').textContent = health && health.generatedAt
+        ? `/api/health OK at ${formatTimestamp(health.generatedAt)}.`
+        : 'Running in static fallback while approved endpoints recover.';
 
-      renderRoadmap(data.roadmap);
+      renderRoadmap(roadmap);
       renderRules(data.operatingRules);
     }
 
     async function loadStatus() {
+      setSurfaceState(
+        'loading',
+        'Loading',
+        'Loading approved endpoints.',
+        'Waiting on /api/status, /api/health, and /api/roadmap.'
+      );
+
       try {
-        const response = await fetch('/api/status', { cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        hydrate(data);
+        const [statusResponse, healthResponse, roadmapResponse] = await Promise.all([
+          fetch('/api/status', { cache: 'no-store' }),
+          fetch('/api/health', { cache: 'no-store' }),
+          fetch('/api/roadmap', { cache: 'no-store' })
+        ]);
+
+        [statusResponse, healthResponse, roadmapResponse].forEach((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+        });
+
+        const [statusData, healthData, roadmapData] = await Promise.all([
+          statusResponse.json(),
+          healthResponse.json(),
+          roadmapResponse.json()
+        ]);
+
+        ensureContract(statusData, '/api/status');
+        ensureContract(healthData, '/api/health');
+        ensureContract(roadmapData, '/api/roadmap');
+
+        statusData.roadmap = roadmapData.roadmap;
+        statusData.nextGate = roadmapData.nextGate;
+
+        hydrate(statusData, healthData, 'live API');
+        setSurfaceState(
+          'ready',
+          'Live',
+          'Approved Status API endpoints are active.',
+          `Contract ${statusData.contractVersion} loaded from /api/status, /api/health, and /api/roadmap.`
+        );
       } catch (error) {
-        document.getElementById('statusLine').textContent = 'Local preview loaded without live API response.';
-        document.getElementById('apiMode').textContent = 'api-unavailable';
-        document.getElementById('generatedAt').textContent = 'preview';
+        console.warn('Status API load failed; using static fallback.', error);
+        hydrate(FALLBACK_STATUS, FALLBACK_HEALTH, 'static fallback');
+        setSurfaceState(
+          'fallback',
+          'Fallback',
+          'Approved endpoints are unavailable; static fallback is active.',
+          `Reason: ${error.message}`
+        );
       }
     }
 
