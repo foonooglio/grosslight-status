@@ -7,7 +7,8 @@
     "start": "node api-server.js",
     "validate": "node scripts/validate-status-data.js",
     "test:api": "node scripts/test-api-contract.js",
-    "test": "npm run validate && npm run test:api"
+    "test:negative": "node --test tests/api-negative-path-contract.test.js",
+    "test": "npm run validate && npm run test:api && npm run test:negative"
   },
   "keywords": [
     "status",

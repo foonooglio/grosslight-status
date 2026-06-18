@@ -4,7 +4,10 @@ const path = require('path');
 const {
   buildErrorResponse,
   buildHealthResponse,
+  buildMethodNotAllowedResponse,
+  buildNotFoundResponse,
   buildRoadmapResponse,
+  buildServerErrorResponse,
   buildStatusResponse,
   loadAndValidateStatusData
 } = require('./lib/status-contract');
@@ -43,44 +46,72 @@ async function serveStatic(res, relativePath) {
   res.end(content);
 }
 
+function isGetMethod(req) {
+  return (req.method || 'GET').toUpperCase() === 'GET';
+}
+
+async function handleStatusRequest(res) {
+  const data = await loadAndValidateStatusData();
+  return sendJson(res, 200, buildStatusResponse(data));
+}
+
+async function handleRoadmapRequest(res) {
+  const data = await loadAndValidateStatusData();
+  return sendJson(res, 200, buildRoadmapResponse(data));
+}
+
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://localhost:${PORT}`);
 
     if (url.pathname === '/api/status') {
-      const data = await loadAndValidateStatusData();
-      return sendJson(res, 200, buildStatusResponse(data));
+      if (!isGetMethod(req)) {
+        res.setHeader('Allow', 'GET');
+        return sendJson(res, 405, buildMethodNotAllowedResponse());
+      }
+      try {
+        return await handleStatusRequest(res);
+      } catch (error) {
+        return sendJson(res, 500, buildErrorResponse(error));
+      }
     }
 
     if (url.pathname === '/api/health') {
+      if (!isGetMethod(req)) {
+        res.setHeader('Allow', 'GET');
+        return sendJson(res, 405, buildMethodNotAllowedResponse());
+      }
       return sendJson(res, 200, buildHealthResponse());
     }
 
     if (url.pathname === '/api/roadmap') {
-      const data = await loadAndValidateStatusData();
-      return sendJson(res, 200, buildRoadmapResponse(data));
+      if (!isGetMethod(req)) {
+        res.setHeader('Allow', 'GET');
+        return sendJson(res, 405, buildMethodNotAllowedResponse());
+      }
+      try {
+        return await handleRoadmapRequest(res);
+      } catch (error) {
+        return sendJson(res, 500, buildErrorResponse(error));
+      }
+    }
+
+    if (url.pathname.startsWith('/api/')) {
+      return sendJson(res, 404, buildNotFoundResponse());
     }
 
     if (url.pathname === '/' || url.pathname === '/index.html') {
-      return serveStatic(res, 'index.html');
+      return await serveStatic(res, 'index.html');
     }
 
     const staticPath = url.pathname.replace(/^\//, '');
-    return serveStatic(res, staticPath);
+    return await serveStatic(res, staticPath);
   } catch (error) {
     if (error.code === 'ENOENT') {
-      return sendJson(res, 404, { error: 'not_found' });
+      return sendJson(res, 404, buildNotFoundResponse());
     }
 
-    if (error.code === 'STATUS_DATA_INVALID') {
-      return sendJson(res, 500, buildErrorResponse(error));
-    }
-
-    return sendJson(res, 500, {
-      error: 'server_error',
-      message: error.message,
-      generatedAt: new Date().toISOString()
-    });
+    return sendJson(res, 500, buildServerErrorResponse());
   }
 });
 
