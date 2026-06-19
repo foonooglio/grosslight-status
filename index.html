@@ -179,6 +179,30 @@
       margin-bottom: 18px;
     }
 
+    .rehearsal-banner {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(241, 193, 95, 0.28);
+      background: linear-gradient(180deg, rgba(241, 193, 95, 0.16), rgba(241, 193, 95, 0.08));
+      box-shadow: var(--shadow);
+    }
+
+    .rehearsal-banner strong {
+      color: #fff1cd;
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .rehearsal-banner p {
+      margin: 0;
+      color: #ffe8be;
+      line-height: 1.6;
+    }
+
     .card {
       background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
       border: 1px solid var(--border);
@@ -592,6 +616,11 @@
         <button class="button primary hidden" id="installButton" type="button">Install app</button>
       </div>
     </header>
+
+    <section class="rehearsal-banner" id="rehearsalMarker" aria-label="S4 rehearsal marker">
+      <strong>S4 rehearsal marker</strong>
+      <p>temporary degraded-state banner for rollback drill. This is a controlled rehearsal, not a real outage.</p>
+    </section>
 
     <section class="hero">
       <article class="card hero-card">
